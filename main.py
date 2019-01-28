@@ -37,6 +37,31 @@ class BusinessProfile(db.Model):
     operatingHours = db.Column(db.String(200))
     image = db.Column(db.String(200))
     post = db.relationship("BusinessPosts", backref="author", lazy="dynamic")
+    #owner = db.Column(db.String(200))  ---------------- Identify Profile Owner
+
+    def set_brandName(self, brandName):
+        self.brandName = brandName
+
+    def set_brandDesc(self, brandDesc):
+        self.brandDesc = brandDesc
+
+    def set_address(self, address):
+        self.address = address
+
+    def set_hotline(self, hotline):
+        self.hotline = hotline
+
+    def set_email(self, email):
+        self.email = email
+
+    def set_website(self, website):
+        self.website = website
+
+    def set_operatingHours(self, operatingHours):
+        self.operatingHours = operatingHours
+
+    def set_image(self, image):
+        self.image = image
 
 
 # Business Posts
@@ -126,13 +151,37 @@ def businessprof(name):
     form = PostStatus()
     posts = BusinessPosts.query.filter_by(blog_id=business.id).all()
     if form.validate_on_submit():
-        image = photos.save(request.files["photo"])
+        try:
+            image = photos.save(request.files["photo"])
+        except:
+            image = None
         post1 = BusinessPosts(blog=form.post.data, author=business, postImage=image)  # current_user
         db.session.add(post1)
         db.session.commit()
         flash('Your post is now live!')
         return redirect(url_for('businessprof', name=name))
     return render_template("BusinessProf.html", name=business, form=form, posts=posts)
+
+
+# UPDATE BUSINESS PROFILE
+@app.route("/profile/<name>/update", methods=["POST", "GET"])
+def updatebusiness(name):
+    businessName = BusinessProfile.query.filter_by(brandName=name).first()
+    form = BusinessForms()
+    if form.validate_on_submit() and 'photo' in request.files:
+        image = photos.save(request.files["photo"])
+        businessName.set_brandName(form.brandName.data)
+        businessName.set_brandDesc(form.brandDesc.data)
+        businessName.set_address(form.address.data)
+        businessName.set_hotline(form.hotline.data)
+        businessName.set_email(form.email.data)
+        businessName.set_website(form.website.data)
+        businessName.set_operatingHours(form.operatingHours.data)
+        businessName.set_image(image)
+        db.session.add(businessName)
+        db.session.commit()
+        return redirect(url_for("businessprof", name=form.brandName.data))
+    return render_template("UpdateProfile.html", form=form, name=businessName)
 
 
 @app.route("/create")
